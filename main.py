@@ -44,16 +44,24 @@ class Player:
         pygame.draw.rect(self.screen, (75, 75, 75), (self.x_position, self.y_position, 50, self.height))
 
     def move_player_left(self):
-        self.x_position -= 1
+        # restrict player's movement to stay inside the left screen boundary
+        if self.x_position > 0:
+            self.x_position -= 1
 
     def move_player_right(self):
-        self.x_position += 1
+        # restrict player's movement to stay inside the right screen boundary
+        if self.x_position < self.screen.get_width() - 50:
+            self.x_position += 1
 
     def move_player_up(self):
-        self.y_position -= 1
+        # restrict player's movement to stay inside the top screen boundary
+        if self.y_position > 0:
+            self.y_position -= 1
 
     def move_player_down(self):
-        self.y_position += 1
+        # restrict player's movement to stay inside the bottom screen boundary
+        if self.y_position < self.screen.get_height() - self.height:
+            self.y_position += 1
 
 
 # player initialization
@@ -70,6 +78,24 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
+    # get the pressed key
+    pressed_key = pygame.key.get_pressed()
+
+    # movement handling
+    if pressed_key[pygame.K_a]:
+        player.move_player_left()
+    elif pressed_key[pygame.K_d]:
+        player.move_player_right()
+    elif pressed_key[pygame.K_s]:
+        player.move_player_down()
+    elif pressed_key[pygame.K_w]:
+        player.move_player_up()
+
+    # diagonal movement
+    if pressed_key[pygame.K_w] and pressed_key[pygame.K_d]:
+        player.move_player_up()
+        player.move_player_right()
+
     # fill the screen with the white collor
     screen.fill("white")
 
@@ -78,9 +104,6 @@ while running:
 
     # displaying the player
     player.draw_player()
-
-    # get the pressed key
-    pressed_key = pygame.key.get_pressed()
 
     # apply the fps rate
     clock.tick(fps)
