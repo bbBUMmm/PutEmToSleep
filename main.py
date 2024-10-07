@@ -1,3 +1,7 @@
+#
+# Created By:
+#  * Mykyta Prykhodko *
+#
 import pygame
 
 # pygame setup
