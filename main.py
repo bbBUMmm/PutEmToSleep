@@ -165,7 +165,3 @@ while running:
 
 # quit the application
 pygame.quit()
-
-# Testing git credentials of the user
-user = "Mykyta Prykhodko"
-email = "myky.prykhodko@umb.sk"
