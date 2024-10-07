@@ -43,6 +43,7 @@ class Player:
     def draw_player(self):
         pygame.draw.rect(self.screen, (75, 75, 75), (self.x_position, self.y_position, 50, self.height))
 
+    # movement handling
     def move_player_left(self):
         # restrict player's movement to stay inside the left screen boundary
         if self.x_position > 0:
@@ -64,8 +65,49 @@ class Player:
             self.y_position += 1
 
 
+# basketball class initialization
+class Basketball:
+    def __init__(self, display, position_x, position_y, bounce):
+        self.position_x = position_x
+        self.position_y = position_y
+        # the boundary for the bounce of the ball in pixels
+        self.bounce = bounce
+        # the help variable
+        self.help = 0
+        self.up = True
+        self.down = False
+        self.screen = display
+
+    def draw_the_ball(self):
+        pygame.draw.circle(self.screen, "orange", (self.position_x, self.position_y), 11)
+
+    # dribbling handling
+    def move_the_ball(self):
+        # Мяч движется вверх, пока не достигнет максимальной верхней точки
+        if self.up and self.help < self.bounce:
+            self.position_y -= 1
+            self.help += 1
+        # Если достиг верхней точки, меняем направление на вниз
+        elif self.up and self.help >= self.bounce:
+            self.up = False
+            self.down = True
+            self.help = 0
+        # Мяч движется вниз, пока не достигнет начальной точки
+        elif self.down and self.help < self.bounce:
+            self.position_y += 1
+            self.help += 1
+        # Если достиг начальной точки, меняем направление на вверх
+        elif self.down and self.help >= self.bounce:
+            self.down = False
+            self.up = True
+            self.help = 0
+
+
 # player initialization
 player = Player(screen, None, 70, screen_width/2, screen_height/2)
+
+# basketball initialization
+ball = Basketball(screen, player.x_position+48, player.y_position+55, 30)
 
 # background initialization
 background = Background(0, 0, images)
@@ -80,6 +122,9 @@ while running:
 
     # get the pressed key
     pressed_key = pygame.key.get_pressed()
+
+    # ball movement
+    ball.move_the_ball()
 
     # movement handling
     if pressed_key[pygame.K_a]:
@@ -104,6 +149,9 @@ while running:
 
     # displaying the player
     player.draw_player()
+
+    # displaying the ball
+    ball.draw_the_ball()
 
     # apply the fps rate
     clock.tick(fps)
