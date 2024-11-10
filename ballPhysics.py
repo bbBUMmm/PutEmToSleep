@@ -1,7 +1,9 @@
+from idlelib.pyparse import trans
+
 import pygame, sys
 
 class Ball(pygame.sprite.Sprite):
-    def __init__(self, position_x, position_y, scale=4, gravity=0.5):
+    def __init__(self, position_x, position_y, scale=3, gravity=0.5):
         super().__init__()
 
         self.sprites = []
@@ -50,7 +52,9 @@ class Floor(pygame.sprite.Sprite):
         self.position_y = position_y
         self.floor_width = floor_width
         self.image = pygame.Surface((floor_width, 20))
-        self.image.fill((0, 0, 0))  # Black color for the floor
+        # make floor invisible
+        self.image.set_alpha(1)
+        self.image.fill((0,0,0))  # Black color for the floor
         self.rect = self.image.get_rect()
         self.rect.y = position_y
 
@@ -58,8 +62,8 @@ pygame.init()
 clock = pygame.time.Clock()
 
 # Screen dimensions
-screen_width = 400
-screen_height = 400
+screen_width = 800
+screen_height = 600
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption('Sprite Animation')
 
@@ -68,13 +72,15 @@ moving_sprites = pygame.sprite.Group()
 stack_sprites = pygame.sprite.Group()
 
 # Create floor and ball objects
-floor = Floor(380, screen_width)
+floor = Floor(350, screen_width)
 ball = Ball(180, 100)
 ball.activate()  # Make the ball active
 
 # Add floor and ball to the sprite groups
 moving_sprites.add(ball)
 stack_sprites.add(floor)
+
+court = pygame.transform.scale(pygame.image.load('Images/Court-0001.png'), (screen_width, 150))
 
 while True:
     for event in pygame.event.get():
@@ -85,7 +91,8 @@ while True:
 
 
     # Clear the screen and redraw everything
-    screen.fill((255, 255, 255))
+    screen.fill((175,175,175))
+    screen.blit(court, (0, 290))
     moving_sprites.draw(screen)  # Draw the ball
     moving_sprites.update()  # Update ball's position and velocity
     stack_sprites.draw(screen)  # Draw the floor
