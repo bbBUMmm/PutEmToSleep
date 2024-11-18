@@ -58,6 +58,15 @@ class Floor(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.y = position_y
 
+class Hoop(pygame.sprite.Sprite):
+    def __init__(self, position_x, position_y):
+        super().__init__()
+        self.position_x = position_x
+        self.position_y = position_y
+        # TODO: hoop properties
+
+
+
 pygame.init()
 clock = pygame.time.Clock()
 
@@ -81,6 +90,7 @@ moving_sprites.add(ball)
 stack_sprites.add(floor)
 
 court = pygame.transform.scale(pygame.image.load('Images/Court-0001.png'), (screen_width, 150))
+hoop = pygame.transform.scale(pygame.image.load('Images/Hoop-0001.png'), (260, 290))
 
 while True:
     for event in pygame.event.get():
@@ -93,8 +103,12 @@ while True:
     # Clear the screen and redraw everything
     screen.fill((175,175,175))
     screen.blit(court, (0, 290))
+    screen.blit(hoop, (530, 85))
+
+
     moving_sprites.draw(screen)  # Draw the ball
     moving_sprites.update()  # Update ball's position and velocity
     stack_sprites.draw(screen)  # Draw the floor
+
     pygame.display.flip()  # Update the display
     clock.tick(60)  # Maintain a consistent frame rate
