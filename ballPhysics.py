@@ -78,7 +78,7 @@ class MainMenu:
 
 # Class to handle Ball logic
 class Ball(pygame.sprite.Sprite):
-    def __init__(self, position_x, position_y, floor_group, scale=2, gravity=0.5):
+    def __init__(self, position_x, position_y, floor_group, scale=1.5, gravity=0.5):
         super().__init__()
 
         self.sprites = []
@@ -111,6 +111,13 @@ class Ball(pygame.sprite.Sprite):
 
     def deactivate(self):
         self.active = False
+
+    def roll_the_ball_test(self):
+        self.velocity_x+=65
+        self.position_x+=self.velocity_x
+        # first tries to implement rotation
+        # for n in range(1, 45):
+        #     self.image = pygame.transform.rotate(self.image, n)
 
     def update(self):
         if self.active:
@@ -146,7 +153,7 @@ class Floor(pygame.sprite.Sprite):
         self.floor_width = floor_width
         self.image = pygame.Surface((floor_width, 20))
         # make floor invisible
-        # self.image.set_alpha(1)
+        self.image.set_alpha(1)
         self.image.fill((0,0,0))  # Black color for the floor
         self.rect = self.image.get_rect()
         self.rect.y = position_y
@@ -210,7 +217,7 @@ floor_group = pygame.sprite.Group()
 hoop_group = pygame.sprite.Group()
 
 # Create floor ball and hoop objects
-floor = Floor(355, screen_width)
+floor = Floor(385, screen_width)
 ball = Ball(180, 110, floor_group)
 ball.set_activate()  # Make the ball active
 hoop = Hoop(718, 35)
@@ -219,6 +226,13 @@ hoop = Hoop(718, 35)
 ball_group.add(ball)
 floor_group.add(floor)
 hoop_group.add(hoop)
+
+# Load second hoop
+left_hoop = pygame.transform.flip(pygame.transform.scale(pygame.image.load('Images/Hoop-0001.png'), (265, 340)), True, False)
+
+# Load player
+player_standing = pygame.transform.scale(pygame.image.load('Images/MainPlayer-0001.png'), (50, 100))
+player_shooting = pygame.transform.scale(pygame.image.load('Images/MainPlayer-0002.png'), (50, 100))
 
 # Scale and load court and hoop images
 court = pygame.transform.scale(pygame.image.load('Images/Court-0001.png'), (screen_width, 150))
@@ -234,6 +248,9 @@ Button(screen_width/2-70, screen_height/2+30, 140, 50, 'Print the ball', display
 # Initialization of the menu
 menu = MainMenu((29, 41, 58), None, screen, buttons)
 
+pressed = False
+is_shooting_ball = False
+
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -248,9 +265,27 @@ while True:
         screen.blit(court, (0, 290))
 
         ball_group.draw(screen)  # Draw the ball
+        if pygame.key.get_pressed()[pygame.K_SPACE] and not pressed:
+            ball = ball_group.sprites()[0]
+            ball.roll_the_ball_test()
+            pressed = True
         ball_group.update()  # Update ball's position and velocity
+
+        # Draw the left hoop
+        screen.blit(left_hoop, (18, 35))
+
+
         floor_group.draw(screen)  # Draw the floor
         hoop_group.draw(screen)
 
+        # Draw the player
+        if pygame.key.get_pressed()[pygame.K_RETURN]:
+            is_shooting_ball = True
+        else:
+            is_shooting_ball = False
+        if is_shooting_ball:
+            screen.blit(player_shooting, (670, 270))
+        else:
+            screen.blit(player_standing, (670, 290))
         pygame.display.flip()  # Update the display
         clock.tick(60)  # Maintain a consistent frame rate
