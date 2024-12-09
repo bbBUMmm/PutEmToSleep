@@ -1,7 +1,6 @@
 import random
 
 import pygame, sys
-from pygame.sprite import collide_rect
 
 
 class Button:
@@ -344,12 +343,11 @@ seven = pygame.transform.scale(pygame.image.load('Images/seven.png'), (50,50))
 eight = pygame.transform.scale(pygame.image.load('Images/eight.png'), (50,50))
 nine = pygame.transform.scale(pygame.image.load('Images/nine.png'), (50,50))
 
-
 # Array of buttons
 buttons = []
 
 Button(screen_width/2-50, screen_height/2-30, 100, 50, 'Play', hide_menu)
-Button(screen_width/2-70, screen_height/2+30, 140, 50, 'Print the ball', display_random_ball, True)
+Button(screen_width/2-70, screen_height/2+30, 140, 50, 'Press me!', display_random_ball, True)
 
 # Initialization of the menu
 menu = MainMenu((29, 41, 58), None, screen, buttons)
@@ -357,6 +355,13 @@ menu = MainMenu((29, 41, 58), None, screen, buttons)
 score = 0
 
 is_shooting_ball = False
+
+# Variable to shoot from the center
+long_shot = False
+
+#
+long_shot_min = -12
+long_shot_max = -18
 
 range_left = -16.0
 range_right = -8.0
@@ -369,6 +374,13 @@ while True:
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
+
+    if pygame.key.get_pressed()[pygame.K_l]:
+        long_shot = True
+    if pygame.key.get_pressed()[pygame.K_t]:
+        long_shot = False
+
+    print(long_shot)
 
     if menu.active:
         menu.draw_the_menu()
@@ -412,32 +424,62 @@ while True:
                 # Handle any case where the score is not between 0 and 9
                 pass
 
-        if is_shooting_ball and not finished:
-            # Handle the ball position
-            ball = ball_group.sprites()[0]
-            ball.return_to_the_player_position((692, 330))
-            ball.set_shooting_position((710, 268))
+        # Short shot
+        if not long_shot:
+            if is_shooting_ball and not finished:
+                # Handle the ball position
+                ball = ball_group.sprites()[0]
+                ball.return_to_the_player_position((692, 330))
+                ball.set_shooting_position((710, 268))
 
 
-            random_y_force = random.uniform(range_left, range_right)
-            ball.throw(5, random_y_force)
+                random_y_force = random.uniform(range_left, range_right)
+                ball.throw(5, random_y_force)
 
-            # With every made basket make the range closer to the ideal range of -11 and -13
-            if old_score != score:
-                old_score = score
-                if range_right > -11 and range_left < -13:
-                    range_right-=1
-                    range_left+=1
-            screen.blit(player_shooting, (670, 270))
-            screen.blit(emoji, (700, 220))
-        else:
-            screen.blit(player_standing, (670, 290))
-        ball_group.draw(screen)  # Draw the ball
+                # With every made basket make the range closer to the ideal range of -11 and -13
+                if old_score != score:
+                    old_score = score
+                    if range_right > -11 and range_left < -13:
+                        range_right-=1
+                        range_left+=1
+                screen.blit(player_shooting, (670, 270))
+                screen.blit(emoji, (700, 220))
+            else:
+                screen.blit(player_standing, (670, 290))
+            ball_group.draw(screen)  # Draw the ball
 
+        if long_shot:
+            if is_shooting_ball and not finished:
+                # Handle the ball position
+                ball = ball_group.sprites()[0]
+                ball.return_to_the_player_position((392, 330))
+                ball.set_shooting_position((410, 268))
+
+                random_y_force = random.uniform(long_shot_min, long_shot_max)
+                ball.throw(10, random_y_force)
+
+                # With every made basket make the range closer to the ideal range of -11 and -13
+                if old_score != score:
+                    old_score = score
+                    if range_right > -11 and range_left < -13:
+                        range_right -= 1
+                        range_left += 1
+                screen.blit(player_shooting, (370, 270))
+                screen.blit(emoji, (400, 220))
+            else:
+                screen.blit(player_standing, (370, 290))
+            ball_group.draw(screen)  # Draw the ball
+
+        # Short shot
         if pygame.key.get_pressed()[pygame.K_SPACE]:
             ball = ball_group.sprites()[0]
             # ball.roll_the_ball_test()
             ball.return_to_the_player_position((692, 330))
+        if long_shot:
+            if pygame.key.get_pressed()[pygame.K_SPACE]:
+                ball = ball_group.sprites()[0]
+                # ball.roll_the_ball_test()
+                ball.return_to_the_player_position((392, 330))
         ball_group.update()  # Update ball's position and velocity
 
         # Draw the left hoop
