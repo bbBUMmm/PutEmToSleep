@@ -78,7 +78,7 @@ class MainMenu:
 
 # Class to handle Ball logic
 class Ball(pygame.sprite.Sprite):
-    def __init__(self, position_x, position_y, floor_group, hoop_group, trigger_group, scale=1.5, gravity=0.5):
+    def __init__(self, position_x, position_y, floor_group, hoop_group, trigger_group, scale=1.5, gravity=0.45):
         super().__init__()
 
         self.sprites = []
@@ -116,8 +116,8 @@ class Ball(pygame.sprite.Sprite):
     def set_activate(self):
         self.active = True
 
+    # Return the ball to the player`s position
     def return_to_the_player_position(self, player_position):
-        """Returns the ball to the player's position."""
         self.position_x, self.position_y = player_position
         self.velocity_x = 0
         self.velocity_y = 0
@@ -125,9 +125,8 @@ class Ball(pygame.sprite.Sprite):
         self.thrown = False
         self.rect.topleft = [self.position_x, self.position_y]
 
-
+    # Set the ball at players hands
     def set_shooting_position(self, shooting_position):
-        """Sets the ball at a shooting position."""
         self.position_x, self.position_y = shooting_position
         self.velocity_x = 0
         self.velocity_y = 0
@@ -135,15 +134,14 @@ class Ball(pygame.sprite.Sprite):
         self.thrown = False
         self.rect.topleft = [self.position_x, self.position_y]
 
+    # Throw the ball with given velocity
     def throw(self, direction_x, direction_y):
-        """Throws the ball with a given velocity."""
         if not self.thrown:
             self.velocity_x = direction_x
             self.velocity_y = direction_y
             self.active = True
             self.thrown = True
             self.throw_time = pygame.time.get_ticks()  # Save the time when the ball was thrown
-
 
     def deactivate(self):
         self.active = False
@@ -177,6 +175,9 @@ class Ball(pygame.sprite.Sprite):
             # Check for collision with any floor in the group
             for floor in self.floor_group:
                 if pygame.sprite.collide_mask(self, floor):
+
+                    global ball_is_in_the_air
+                    ball_is_in_the_air = False
 
                     # Adjust the ball's position to stay on top of the floor
                     self.position_y = floor.rect.top - self.rect.height
@@ -246,6 +247,8 @@ class Hoop(pygame.sprite.Sprite):
         self.position_y = position_y
 
         self.rect.topleft = (self.position_x, self.position_y)
+    def flip_the_hoop(self):
+        self.image = pygame.transform.flip(pygame.transform.scale(pygame.image.load('Images/Hoop-0001.png'), (265, 340)), True, False)
 
 def hide_menu():
     menu.disable()
@@ -306,16 +309,20 @@ floor = Floor(385, screen_width)
 ball = Ball(495, 110, floor_group, hoop_group, trigger_group)
 ball.set_activate()  # Make the ball active
 hoop = Hoop(718, 35)
+left_hoop = Hoop(18, 35)
+left_hoop.flip_the_hoop()
+
 trigger = Trigger(200)
 
 # Add floor and ball to the sprite groups
 ball_group.add(ball)
 floor_group.add(floor)
 hoop_group.add(hoop)
+
+# Load left hoop
+hoop_group.add(left_hoop)
 trigger_group.add(trigger)
 
-# Load second hoop
-left_hoop = pygame.transform.flip(pygame.transform.scale(pygame.image.load('Images/Hoop-0001.png'), (265, 340)), True, False)
 
 # Load player
 player_standing = pygame.transform.scale(pygame.image.load('Images/MainPlayer-0001.png'), (50, 100))
@@ -369,18 +376,33 @@ range_right = -8.0
 old_score = 0
 
 finished = False
+
+frame = 1
+
+one_try = True
+
+ball_is_in_the_air = False
+
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_p and not ball_is_in_the_air:
+            one_try = True
+        if event.type == pygame.KEYUP and event.key == pygame.K_RETURN:
+            ball_is_in_the_air = True
+            one_try = False
 
     if pygame.key.get_pressed()[pygame.K_l]:
         long_shot = True
     if pygame.key.get_pressed()[pygame.K_t]:
         long_shot = False
 
-    print(long_shot)
+    # Check if the ball is off the screen
+    ball = ball_group.sprites()[0]
+    if ball.position_y > 2000:
+        ball_is_in_the_air = False
 
     if menu.active:
         menu.draw_the_menu()
@@ -389,11 +411,13 @@ while True:
         screen.fill((175,175,175))
         screen.blit(court, (0, 290))
 
-        # Draw the player
-        if pygame.key.get_pressed()[pygame.K_RETURN] and not finished:
+
+        if pygame.key.get_pressed()[pygame.K_RETURN] and not finished and one_try:
             is_shooting_ball = True
         else:
             is_shooting_ball = False
+            frame = 1
+
         # Check the current score
         score = ball_group.sprites()[0].get_score()
         # Blit the score table
@@ -436,6 +460,22 @@ while True:
                 random_y_force = random.uniform(range_left, range_right)
                 ball.throw(5, random_y_force)
 
+                # Display ShootMeter
+
+                current_time = pygame.time.get_ticks()
+
+                if current_time - last_update_time >= 5:
+                    if frame <= 65:
+                        print(frame)
+                        screen.blit(pygame.transform.scale(pygame.image.load(f'Images/ShootMeterMain/ShootMeter{frame}.png'), (55, 100)), (650, 230))
+                        frame += 1
+                    else:
+                        # Shoot the shoot because you are too long in the air
+                        one_try = False
+
+                    last_update_time = current_time
+
+
                 # With every made basket make the range closer to the ideal range of -11 and -13
                 if old_score != score:
                     old_score = score
@@ -471,19 +511,15 @@ while True:
             ball_group.draw(screen)  # Draw the ball
 
         # Short shot
-        if pygame.key.get_pressed()[pygame.K_SPACE]:
+        if pygame.key.get_pressed()[pygame.K_SPACE] and one_try:
             ball = ball_group.sprites()[0]
-            # ball.roll_the_ball_test()
             ball.return_to_the_player_position((692, 330))
         if long_shot:
-            if pygame.key.get_pressed()[pygame.K_SPACE]:
+            if pygame.key.get_pressed()[pygame.K_SPACE] and one_try:
                 ball = ball_group.sprites()[0]
-                # ball.roll_the_ball_test()
                 ball.return_to_the_player_position((392, 330))
-        ball_group.update()  # Update ball's position and velocity
-
-        # Draw the left hoop
-        screen.blit(left_hoop, (18, 35))
+        # Update ball's position and velocity
+        ball_group.update()
 
         floor_group.draw(screen)  # Draw the floor
         hoop_group.draw(screen)
