@@ -1,4 +1,5 @@
 import random
+from re import purge
 
 import pygame, sys
 
@@ -296,7 +297,10 @@ font = pygame.font.SysFont('Arial', 24)
 screen_width = 1000
 screen_height = 600
 screen = pygame.display.set_mode((screen_width, screen_height))
-pygame.display.set_caption('Sprite Animation')
+# Set caption
+pygame.display.set_caption('PutEmToSleep')
+# Set icon
+pygame.display.set_icon(pygame.image.load('Images/Emogi-0001.png'))
 
 # Create sprite groups
 ball_group = pygame.sprite.Group()
@@ -370,8 +374,6 @@ long_shot = False
 long_shot_min = -12
 long_shot_max = -18
 
-range_left = -16.0
-range_right = -8.0
 
 old_score = 0
 
@@ -382,7 +384,13 @@ frame = 1
 one_try = True
 
 ball_is_in_the_air = False
+ball_is_in_hands = False
 
+emoji_display_time = 2000
+emoji_start_time = None
+showing_emoji = False
+
+enter_released_in_shot_frame = False
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -390,9 +398,16 @@ while True:
             sys.exit()
         if event.type == pygame.KEYDOWN and event.key == pygame.K_p and not ball_is_in_the_air:
             one_try = True
-        if event.type == pygame.KEYUP and event.key == pygame.K_RETURN:
+        if event.type == pygame.KEYUP and event.key == pygame.K_RETURN and ball_is_in_hands:
             ball_is_in_the_air = True
+            ball_is_in_hands = False
             one_try = False
+
+            # Встановити прапорець, якщо кадр у потрібному діапазоні
+            if 49 <= frame <= 55:
+                enter_released_in_shot_frame = True
+            else:
+                enter_released_in_shot_frame = False
 
     if pygame.key.get_pressed()[pygame.K_l]:
         long_shot = True
@@ -403,6 +418,7 @@ while True:
     ball = ball_group.sprites()[0]
     if ball.position_y > 2000:
         ball_is_in_the_air = False
+        ball_is_in_hands = False
 
     if menu.active:
         menu.draw_the_menu()
@@ -414,6 +430,7 @@ while True:
 
         if pygame.key.get_pressed()[pygame.K_RETURN] and not finished and one_try:
             is_shooting_ball = True
+
         else:
             is_shooting_ball = False
             frame = 1
@@ -450,15 +467,33 @@ while True:
 
         # Short shot
         if not long_shot:
-            if is_shooting_ball and not finished:
+            if is_shooting_ball and not finished and ball_is_in_hands:
                 # Handle the ball position
                 ball = ball_group.sprites()[0]
-                ball.return_to_the_player_position((692, 330))
                 ball.set_shooting_position((710, 268))
 
+                # Shot logic
+                if 1 <= frame <= 32:
+                    random_y_force = random.uniform(-10.5, -13.0)
+                    ball.throw(2, random_y_force)
+                if 33 <= frame <= 42:
+                    ball.throw(4.0, -10)
+                if 43 <= frame <= 48:
+                    ball.throw(4.2, -11)
+                # This means that the shot is perfect and the probability of player
+                #   making the shot is 100%
+                if 49 <= frame <= 55:
+                    ball.throw(4.9, -10.5)
+                    if not showing_emoji:
+                        showing_emoji = True
+                        emoji_start_time = pygame.time.get_ticks()
 
-                random_y_force = random.uniform(range_left, range_right)
-                ball.throw(5, random_y_force)
+                if 56 <= frame <= 60:
+                    ball.throw(6.5, -11.0)
+                if 61 <= frame <= 66:
+                    random_y_force = random.uniform(-12.5, -16)
+                    ball.throw(7, random_y_force)
+
 
                 # Display ShootMeter
 
@@ -466,7 +501,6 @@ while True:
 
                 if current_time - last_update_time >= 5:
                     if frame <= 65:
-                        print(frame)
                         screen.blit(pygame.transform.scale(pygame.image.load(f'Images/ShootMeterMain/ShootMeter{frame}.png'), (55, 100)), (650, 230))
                         frame += 1
                     else:
@@ -475,49 +509,87 @@ while True:
 
                     last_update_time = current_time
 
-
-                # With every made basket make the range closer to the ideal range of -11 and -13
                 if old_score != score:
                     old_score = score
-                    if range_right > -11 and range_left < -13:
-                        range_right-=1
-                        range_left+=1
                 screen.blit(player_shooting, (670, 270))
-                screen.blit(emoji, (700, 220))
+
             else:
                 screen.blit(player_standing, (670, 290))
             ball_group.draw(screen)  # Draw the ball
 
+        if showing_emoji and enter_released_in_shot_frame and not long_shot:
+            if pygame.time.get_ticks() - emoji_start_time < emoji_display_time:
+                screen.blit(emoji, (705, 245))
+            else:
+                showing_emoji = False
+                enter_released_in_shot_frame = False
+
+        if showing_emoji and enter_released_in_shot_frame and long_shot:
+            if pygame.time.get_ticks() - emoji_start_time < emoji_display_time:
+                screen.blit(emoji, (480, 245))
+            else:
+                showing_emoji = False
+                enter_released_in_shot_frame = False
+
         if long_shot:
-            if is_shooting_ball and not finished:
+            if is_shooting_ball and not finished and ball_is_in_hands:
                 # Handle the ball position
                 ball = ball_group.sprites()[0]
-                ball.return_to_the_player_position((392, 330))
-                ball.set_shooting_position((410, 268))
+                ball.set_shooting_position((478, 268))
 
-                random_y_force = random.uniform(long_shot_min, long_shot_max)
-                ball.throw(10, random_y_force)
+                # Shot logic
+                if 1 <= frame <= 42:
+                    random_y_force = random.uniform(-10.5, -13.0)
+                    ball.throw(7.5, random_y_force)
+                if 43 <= frame <= 48:
+                    ball.throw(8.05, -12)
+                # This means that the shot is perfect and the probability of player
+                #   making the shot is 100%
+                if 49 <= frame <= 55:
+                    ball.throw(8.2, -13)
+                    if not showing_emoji:
+                        showing_emoji = True
+                        emoji_start_time = pygame.time.get_ticks()
+                if 56 <= frame <= 60:
+                    ball.throw(8.6, -14.0)
+                if 61 <= frame <= 66:
+                    random_y_force = random.uniform(-12.5, -16)
+                    ball.throw(9, random_y_force)
 
-                # With every made basket make the range closer to the ideal range of -11 and -13
+                # Display ShootMeter
+
+                current_time = pygame.time.get_ticks()
+
+                if current_time - last_update_time >= 5:
+                    if frame <= 65:
+                        screen.blit(
+                            pygame.transform.scale(pygame.image.load(f'Images/ShootMeterMain/ShootMeter{frame}.png'),
+                                                   (55, 100)), (420, 230))
+                        frame += 1
+                    else:
+                        # Shoot the shoot because you are too long in the air
+                        one_try = False
+
+                    last_update_time = current_time
                 if old_score != score:
                     old_score = score
-                    if range_right > -11 and range_left < -13:
-                        range_right -= 1
-                        range_left += 1
-                screen.blit(player_shooting, (370, 270))
-                screen.blit(emoji, (400, 220))
+                screen.blit(player_shooting, (440, 270))
+
             else:
-                screen.blit(player_standing, (370, 290))
+                screen.blit(player_standing, (440, 290))
             ball_group.draw(screen)  # Draw the ball
 
         # Short shot
         if pygame.key.get_pressed()[pygame.K_SPACE] and one_try:
             ball = ball_group.sprites()[0]
             ball.return_to_the_player_position((692, 330))
+            ball_is_in_hands = True
         if long_shot:
             if pygame.key.get_pressed()[pygame.K_SPACE] and one_try:
                 ball = ball_group.sprites()[0]
-                ball.return_to_the_player_position((392, 330))
+                ball.return_to_the_player_position((465, 328))
+                ball_is_in_hands = True
+
         # Update ball's position and velocity
         ball_group.update()
 
@@ -528,14 +600,12 @@ while True:
         if score == 10:
             finished = True
             screen.fill((29, 41, 58))
-            message = font.render("You did it! You truly put them to sleep.", True, (255, 255, 255))
-            message2 = font.render(
-                "Nine threes is a good result. Keep practicing and maybe you will become Stephen Curry.", True,
-                (255, 255, 255))
+            message = font.render("Great Job", True, (255, 255, 255))
+
             exit_button = pygame.Rect(screen_width/2-50, screen_height/2, 100, 50)
             # Draw the final message
-            screen.blit(message, (50, 200))
-            screen.blit(message2, (50, 250))
+            screen.blit(message, (exit_button.x+5, exit_button.y - 30))
+
 
             mouse_position = pygame.mouse.get_pos()
             # Draw the exit button
