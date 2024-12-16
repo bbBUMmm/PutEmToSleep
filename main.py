@@ -1,3 +1,7 @@
+# Created by:
+#   Mykyta Prykhodko
+#
+
 import random
 
 import pygame, sys
